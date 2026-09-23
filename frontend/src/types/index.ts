@@ -1,4 +1,4 @@
-export type Role = 'customer' | 'admin';
+export type Role = 'customer' | 'admin' | 'CUSTOMER' | 'ADMIN';
 
 export interface User {
   id: string;
@@ -22,6 +22,7 @@ export interface Category {
 export interface Inventory {
   id?: string;
   product_id?: string;
+  total_quantity?: number;
   available_quantity: number;
   reserved_quantity: number;
   sold_quantity?: number;

@@ -54,6 +54,11 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ orderId, initialSt
     let reconnectTimeout: any;
 
     const connect = () => {
+      if (window.location.hostname.includes('github.io')) {
+        setIsConnected(true);
+        return;
+      }
+
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/ws/orders/${orderId}?token=${token}`;
