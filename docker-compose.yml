@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shopflow_postgres
+    environment:
+      POSTGRES_USER: shopflow
+      POSTGRES_PASSWORD: shopflow_password
+      POSTGRES_DB: shopflow_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopflow -d shopflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: shopflow_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: shopflow_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: shopflow
+      RABBITMQ_DEFAULT_PASS: shopflow_secret
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: shopflow_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://shopflow:shopflow_password@postgres:5432/shopflow_db
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_BROKER_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SECRET_KEY=shopflow-super-secure-production-jwt-key-256bit
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://127.0.0.1:3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: shopflow_celery_worker
+    environment:
+      - DATABASE_URL=postgresql://shopflow:shopflow_password@postgres:5432/shopflow_db
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_BROKER_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SECRET_KEY=shopflow-super-secure-production-jwt-key-256bit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: shopflow_celery_beat
+    command: ["celery", "-A", "app.workers.celery_app.celery", "beat", "--loglevel=INFO"]
+    environment:
+      - DATABASE_URL=postgresql://shopflow:shopflow_password@postgres:5432/shopflow_db
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_BROKER_URL=amqp://shopflow:shopflow_secret@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SECRET_KEY=shopflow-super-secure-production-jwt-key-256bit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: shopflow_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
