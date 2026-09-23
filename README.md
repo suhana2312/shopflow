@@ -11,6 +11,11 @@
 [![Vite](https://img.shields.io/badge/Vite-8.x-646cff.svg)](https://vitejs.dev)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f?style=for-the-badge&logo=github)](https://suhana2312.github.io/shopflow/)
+[![GitHub Repo](https://img.shields.io/badge/Repository-suhana2312%2Fshopflow-blue?style=for-the-badge&logo=github)](https://github.com/suhana2312/shopflow)
+
+> 🚀 **Live Interactive Demo**: Access the running system directly in your browser without local installation at **[https://suhana2312.github.io/shopflow/](https://suhana2312.github.io/shopflow/)**
+
 **ShopFlow** is a production-style, portfolio-grade distributed e-commerce backend and real-time frontend platform engineered to handle **high-concurrency flash sales, atomic inventory reservations, asynchronous message-driven order fulfillment, and real-time state streaming**.
 
 This project solves fundamental distributed systems challenges:
